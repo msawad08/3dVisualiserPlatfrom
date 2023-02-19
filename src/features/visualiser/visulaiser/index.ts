@@ -5,29 +5,37 @@ import { Scene } from "./scene";
 
 export class Visualiser {
   canvas?: HTMLCanvasElement;
+  scene?: Scene;
+  renderer?: THREE.WebGLRenderer;
 
   init3d(canvas: HTMLCanvasElement) {
     if (!canvas || canvas === this.canvas) return;
     this.canvas = canvas;
 
-    const scene = new Scene({ canvas });
+    this.scene = new Scene({ canvas });
 
-    const renderer = new THREE.WebGLRenderer({
+    this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       canvas: canvas,
     });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setAnimationLoop(animation);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setAnimationLoop(this.animation.bind(this));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
 
+    (<any>window).editor = this;
+    (<any>window).THREE = THREE;
     // animation
 
-    function animation(time: number) {
 
-      scene.update(time);
+  }
+  animation(time: number){
 
-      renderer.render(scene, scene.camera);
+    if(this.scene && this.renderer){
+      this.scene.update(time);
+  
+      this.renderer.render(this.scene, this.scene.camera);
+
     }
   }
 }
