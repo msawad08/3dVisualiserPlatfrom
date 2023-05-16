@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Scene } from "./scene";
+import { Scene } from "./core/scene";
 
 // init
 
@@ -23,8 +23,9 @@ export class Visualiser {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
 
-    (<any>window).editor = this;
-    (<any>window).THREE = THREE;
+    //TODO: Need to remove added for debugging
+    (window as any).editor = this;
+    (window as any).THREE = THREE;
     // animation
 
 

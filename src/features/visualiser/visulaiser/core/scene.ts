@@ -3,7 +3,7 @@ import {
   PerspectiveCamera,
   PlaneGeometry,
   Mesh,
-  MeshStandardMaterial,
+  // MeshStandardMaterial,
   Object3D,
   Box3,
   Sphere,
@@ -13,15 +13,16 @@ import {
   Spherical,
   Color,
   MathUtils,
-  TextureLoader,
+  // TextureLoader,
   HemisphereLight,
-  SpotLight,
   Raycaster,
   Vector2,
+  MeshPhysicalMaterial,
 } from "three";
 import { GLTFLoader, GLTF } from "three/examples/jsm/loaders/GLTFLoader";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { TransitionMaterial } from "./transitionMaterial"
+import { TransitionMaterial } from "../materials/transitionMaterial"
+import { Reflector } from "./reflector";
 
 const defaultConfig = {
   cameraConfig: {
@@ -148,11 +149,12 @@ export class Scene extends THREEScene {
   }
   async initEnvironment(modelConfig = defaultConfig.modelConfig) {
     const geometry = new PlaneGeometry(15 , 15);
-    const material = new MeshStandardMaterial();
-    material.alphaMap = await new TextureLoader().loadAsync(`${process.env.PUBLIC_URL}/3dModels/env/basic/alpha-fog.png`);
+    
+    const material = new MeshPhysicalMaterial();
     material.transparent = true;
 
-    const mesh = new Mesh(geometry, material);
+    // const mesh = new Mesh(geometry, material);
+    const mesh = new Reflector(geometry, material);
     mesh.rotateX(-Math.PI/2);
     mesh.receiveShadow = true;
     this.add(mesh);
@@ -163,6 +165,7 @@ export class Scene extends THREEScene {
   initControls(domElement: HTMLElement){
     this.controls = new OrbitControls( this.camera, domElement );
     this.controls.maxPolarAngle = MathUtils.degToRad(89);
+    this.controls.enablePan = false;
     
     domElement.addEventListener("click",this.onClick.bind(this))
 
@@ -176,7 +179,7 @@ export class Scene extends THREEScene {
     // calculate objects intersecting the picking ray
     const intersects = this.raycaster.intersectObjects( this.children , true);
 
-    if(intersects[0] && (<Mesh>intersects[0].object).material == this.transitionMaterial?.material){
+    if(intersects[0] && (intersects[0].object as Mesh).material === this.transitionMaterial?.material){
       this.transitionMaterial?.onClick(intersects[0].point);
       this.transitionMaterial?.restart();
     }
