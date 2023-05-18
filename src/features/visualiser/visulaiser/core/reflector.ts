@@ -1,11 +1,8 @@
 import {
-	Color,
 	Matrix4,
 	Mesh,
 	PerspectiveCamera,
 	Plane,
-	ShaderMaterial,
-	UniformsUtils,
 	Vector3,
 	Vector4,
 	WebGLRenderTarget,
@@ -42,11 +39,11 @@ class Reflector extends Mesh {
 
 		const scope = this;
 
-		const color = ( options.color !== undefined ) ? new Color( options.color ) : new Color( 0x7F7F7F );
+		// const color = ( options.color !== undefined ) ? new Color( options.color ) : new Color( 0x7F7F7F );
 		const textureWidth = options.textureWidth || 512;
 		const textureHeight = options.textureHeight || 512;
 		const clipBias = options.clipBias || 0;
-		const shader = options.shader || Reflector.ReflectorShader;
+		// const shader = options.shader || Reflector.ReflectorShader;
 		const multisample = ( options.multisample !== undefined ) ? options.multisample : 4;
 
 		//

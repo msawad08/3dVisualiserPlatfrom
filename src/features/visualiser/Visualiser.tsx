@@ -20,7 +20,7 @@ export function Visualiser() {
   return (
     <div>
       <Canvas canvasRef={canvasRef} />
-      <div className={styles.license}><a href="https://skfb.ly/oCWqC">"2018 Nissan Leaf NISMO RC"</a> by Donovy2025 is licensed under <a href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution</a></div>
+      <div className={styles.license}><a href="https://skfb.ly/oCWqC">2018 Nissan Leaf NISMO RC"</a> by Donovy2025 is licensed under <a href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution</a><br/><a href="/3dModels/nissanLeaf/license.txt">License.txt</a> </div>
     </div>
   );
 }

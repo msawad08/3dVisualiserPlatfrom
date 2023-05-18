@@ -1,13 +1,26 @@
 import * as THREE from "three";
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla'
 
+class TransitionMaterialEvents extends THREE.EventDispatcher{
+    private static  UPDATE_EVENT = "UPDATE_EVENT"
+    onUpdate(time: number){
+        this.dispatchEvent({type: TransitionMaterialEvents.UPDATE_EVENT, data: {time}});
+    }
+
+    addOnUpdateListener(callback: any){
+        this.addEventListener(TransitionMaterialEvents.UPDATE_EVENT, callback)
+    }
+
+}
+
 export class TransitionMaterial {
+
+    static eventDispatcher = new TransitionMaterialEvents();
+
     material?: CustomShaderMaterial;
     startTime = 0;
     currentTime = 0;
-    mesh?: THREE.Mesh;
-    constructor(material: THREE.MeshPhysicalMaterial, mesh: THREE.Mesh){
-        this.mesh = mesh;
+    constructor(material: THREE.MeshPhysicalMaterial){
         this.material = new CustomShaderMaterial({
             baseMaterial: THREE.MeshPhysicalMaterial,
             vertexShader: `
@@ -42,13 +55,17 @@ export class TransitionMaterial {
                 }
             },
         })
+
+        TransitionMaterial.eventDispatcher.addOnUpdateListener((event: any)=>{
+            this.update(event.data.time)
+        });
     }
 
     copyMaterial(source: THREE.MeshPhysicalMaterial) {
-        return {
+        const params=  Object.entries({
 
         name: source.name,
-
+        uuid: source.uuid,
         blending : source.blending,
         side : source.side,
         vertexColors : source.vertexColors,
@@ -126,7 +143,8 @@ export class TransitionMaterial {
 		specularIntensityMap : source.specularIntensityMap,
 		specularColor: source.specularColor?.clone(),
 		specularColorMap : source.specularColorMap,
-        }
+        }).filter(([key,value])=> value !== undefined);
+        return Object.fromEntries(params);
     }
 
     update(time: number){
@@ -135,13 +153,19 @@ export class TransitionMaterial {
             this.material.uniforms.a_time.value = this.currentTime - this.startTime;
     }
 
-    onClick(point: THREE.Vector3){
-        if(this?.material?.uniforms?.a_time)
-            this.material.uniforms.startPoint.value = this.mesh?.worldToLocal(point)
+    onClick(point: THREE.Vector3, mesh: THREE.Mesh){
+        if(this?.material?.uniforms?.a_time){
+            this.material.uniforms.startPoint.value = mesh?.worldToLocal(point)
+            this.restart()
+        }
     }
 
     restart(){
         this.startTime = this.currentTime;
+    }
+
+    static updateAll(time: number){
+        TransitionMaterial.eventDispatcher.onUpdate(time);
     }
 
 }

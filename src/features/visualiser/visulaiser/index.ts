@@ -21,6 +21,7 @@ export class Visualiser {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setAnimationLoop(this.animation.bind(this));
     this.renderer.shadowMap.enabled = true;
+    // this.renderer.setClearColor(new THREE.Color(0x000000ff))
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
 
     //TODO: Need to remove added for debugging

@@ -13,11 +13,12 @@ import {
   Spherical,
   Color,
   MathUtils,
-  // TextureLoader,
+  TextureLoader,
   HemisphereLight,
   Raycaster,
   Vector2,
   MeshPhysicalMaterial,
+  Material
 } from "three";
 import { GLTFLoader, GLTF } from "three/examples/jsm/loaders/GLTFLoader";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -32,7 +33,7 @@ const defaultConfig = {
     far: 1000,
   },
   sceneConfig: {
-    background: new Color("white"),
+    background: new Color("Black"),
   },
   modelConfig: {
     path: process.env.PUBLIC_URL + "/3dModels/nissanLeaf/scene.gltf",
@@ -58,7 +59,7 @@ export class Scene extends THREEScene {
   camera: PerspectiveCamera;
   object?: Object3D;
   controls?: OrbitControls; 
-  transitionMaterial?: TransitionMaterial;
+  transitionMaterials: Record<string,TransitionMaterial> = {};
 
   raycaster = new Raycaster();
   pointer = new Vector2();
@@ -116,8 +117,15 @@ export class Scene extends THREEScene {
     loader.loadAsync(modelConfig.path).then((gltf: GLTF) => {
       this.add(gltf.scene);
       this.object = gltf.scene;
-      gltf.scene.traverse((child)=>{
-        if(child instanceof Mesh) child.castShadow = true;
+      const materials : Record<string, MeshPhysicalMaterial> = {};
+      gltf.scene.traverse((child: Object3D)=>{
+        if(child instanceof Mesh){
+          child.castShadow = true;
+          const material = ((child as Mesh).material) as Material;
+          if(material && material.type === "MeshPhysicalMaterial"){
+              materials[material.uuid] = material as MeshPhysicalMaterial;
+          }
+        }
       })
       const radius = new Box3()
         .setFromObject(gltf.scene)
@@ -127,30 +135,45 @@ export class Scene extends THREEScene {
       this.camera.position.setFromSpherical(spherical);
       this.camera.lookAt(new Vector3());
 
-      
-      let m = gltf.scene.getObjectByName("chassis#carpaint#LOD2#UV1_Untitled037_31");
-      if(m?.children?.length){
-        if(m.children[0] instanceof Mesh){
-          let mesh:any = m.children[0]
-          const transitionMaterial = new TransitionMaterial(mesh.material, mesh);
-          this.transitionMaterial = transitionMaterial;
-          gltf.scene.traverse((ob)=>{
-            if(ob instanceof Mesh && mesh.material === ob.material){
-              ob.material = transitionMaterial.material;
-            }
-          })
-          
-        }
+      Object.entries(materials).forEach(([uuid, material]) => {
+        const transitionMaterial = new TransitionMaterial(material);
+        if(transitionMaterial.material?.uuid)
+          this.transitionMaterials[transitionMaterial.material.uuid] = transitionMaterial;
+      });
 
-      }
+      gltf.scene.traverse((child: Object3D)=>{
+        if(child instanceof Mesh && child.material && this.transitionMaterials[child.material.uuid]){
+          child.material = this.transitionMaterials[child.material.uuid].material;
+        }
+      })
+
+      
+      // let m = gltf.scene.getObjectByName("chassis#carpaint#LOD2#UV1_Untitled037_31");
+      // if(m?.children?.length){
+      //   if(m.children[0] instanceof Mesh){
+      //     let mesh:any = m.children[0]
+      //     const transitionMaterial = new TransitionMaterial(mesh.material, mesh);
+      //     this.transitionMaterial = transitionMaterial;
+      //     gltf.scene.traverse((ob)=>{
+      //       if(ob instanceof Mesh && mesh.material === ob.material){
+      //         ob.material = transitionMaterial.material;
+      //       }
+      //     })
+          
+      //   }
+
+      // }
       
       console.log(radius)
     });
   }
-  async initEnvironment(modelConfig = defaultConfig.modelConfig) {
-    const geometry = new PlaneGeometry(15 , 15);
+  async initEnvironment(modelConfig = defaultConfig.sceneConfig) {
+    const geometry = new PlaneGeometry(15   , 15);
     
-    const material = new MeshPhysicalMaterial();
+    const material = new MeshPhysicalMaterial({
+      color: new Color("Black")
+    });
+    material.alphaMap = await new TextureLoader().loadAsync(`${process.env.PUBLIC_URL}/3dModels/env/basic/alpha-fog.png`);
     material.transparent = true;
 
     // const mesh = new Mesh(geometry, material);
@@ -164,7 +187,7 @@ export class Scene extends THREEScene {
 
   initControls(domElement: HTMLElement){
     this.controls = new OrbitControls( this.camera, domElement );
-    this.controls.maxPolarAngle = MathUtils.degToRad(89);
+    this.controls.maxPolarAngle = MathUtils.degToRad(75);
     this.controls.enablePan = false;
     
     domElement.addEventListener("click",this.onClick.bind(this))
@@ -173,22 +196,25 @@ export class Scene extends THREEScene {
 
   onClick(event: MouseEvent){
     this.pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-	  this.pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-    this.raycaster.setFromCamera( this.pointer, this.camera );
+    this.pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    this.raycaster.setFromCamera(this.pointer, this.camera);
 
     // calculate objects intersecting the picking ray
-    const intersects = this.raycaster.intersectObjects( this.children , true);
+    const intersects = this.raycaster.intersectObjects(this.children, true);
 
-    if(intersects[0] && (intersects[0].object as Mesh).material === this.transitionMaterial?.material){
-      this.transitionMaterial?.onClick(intersects[0].point);
-      this.transitionMaterial?.restart();
-    }
+
+    if (!intersects[0]?.object) return;
+    let mesh = intersects[0].object as Mesh;
+    if (!mesh.material) return;
+
+    const material = (mesh.material) as Material;
+    this.transitionMaterials[material.uuid]?.onClick(intersects[0].point, mesh);
   }
 
   update(time: number): void {
     // console.log(time);
     this.controls?.update();
-    this.transitionMaterial?.update(time);
+    TransitionMaterial.updateAll(time);
     // if (this.object) {
     // //   this.object.rotation.x = time / 2000;
     //   this.object.rotation.y = time / 1000;
