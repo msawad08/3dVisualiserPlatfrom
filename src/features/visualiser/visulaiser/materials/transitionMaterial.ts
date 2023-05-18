@@ -20,26 +20,24 @@ export class TransitionMaterial {
     material?: CustomShaderMaterial;
     startTime = 0;
     currentTime = 0;
-    constructor(material: THREE.MeshPhysicalMaterial){
+    constructor(material: THREE.Material){
         this.material = new CustomShaderMaterial({
-            baseMaterial: THREE.MeshPhysicalMaterial,
+            baseMaterial: material,
             vertexShader: `
-            varying vec2 vUv;
             varying vec3 vPosition;
             void main() {
-                vUv = uv;
                 vPosition = csm_Position;
             }
             `,
             fragmentShader: `
-                varying vec2 vUv;
                 varying vec3 vPosition;
                 uniform float a_time;
                 uniform vec3 newColor;
                 uniform vec3 startPoint;
+                uniform bool change;
                 void main() {
                     // min(max((vPosition.y+4.0)*0.05, 0.0),1.0)
-                    csm_DiffuseColor = mix(csm_DiffuseColor, vec4(newColor.xyz,1.0),(a_time/1000.0) > distance(startPoint, vPosition) ? 1.0:0.0);
+                    if(change) csm_DiffuseColor = mix(csm_DiffuseColor, vec4(newColor.xyz,1.0),(a_time/1000.0) > distance(startPoint, vPosition) ? 1.0:0.0);
                 }
             `,
             ...(this.copyMaterial(material)),
@@ -52,6 +50,9 @@ export class TransitionMaterial {
                 },
                 startPoint:{
                     value: new THREE.Vector3(),
+                },
+                change: {
+                    value: false,
                 }
             },
         })
@@ -61,7 +62,7 @@ export class TransitionMaterial {
         });
     }
 
-    copyMaterial(source: THREE.MeshPhysicalMaterial) {
+    copyMaterial(source: any) {
         const params=  Object.entries({
 
         name: source.name,
@@ -126,7 +127,7 @@ export class TransitionMaterial {
 		iridescence : source.iridescence,
 		iridescenceMap : source.iridescenceMap,
 		iridescenceIOR : source.iridescenceIOR,
-		iridescenceThicknessRange : [ ...source.iridescenceThicknessRange ],
+		iridescenceThicknessRange : source.iridescenceThicknessRange && [ ...source.iridescenceThicknessRange ],
 		iridescenceThicknessMap : source.iridescenceThicknessMap,
 		sheen : source.sheen,
 		sheenColor: source.sheenColor?.clone(),
@@ -156,6 +157,7 @@ export class TransitionMaterial {
     onClick(point: THREE.Vector3, mesh: THREE.Mesh){
         if(this?.material?.uniforms?.a_time){
             this.material.uniforms.startPoint.value = mesh?.worldToLocal(point)
+            this.material.uniforms.change.value = true;
             this.restart()
         }
     }

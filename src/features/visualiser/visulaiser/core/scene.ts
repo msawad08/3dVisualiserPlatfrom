@@ -18,7 +18,8 @@ import {
   Raycaster,
   Vector2,
   MeshPhysicalMaterial,
-  Material
+  Material,
+  Group
 } from "three";
 import { GLTFLoader, GLTF } from "three/examples/jsm/loaders/GLTFLoader";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -117,13 +118,13 @@ export class Scene extends THREEScene {
     loader.loadAsync(modelConfig.path).then((gltf: GLTF) => {
       this.add(gltf.scene);
       this.object = gltf.scene;
-      const materials : Record<string, MeshPhysicalMaterial> = {};
+      const materials : Record<string, Material> = {};
       gltf.scene.traverse((child: Object3D)=>{
         if(child instanceof Mesh){
           child.castShadow = true;
           const material = ((child as Mesh).material) as Material;
-          if(material && material.type === "MeshPhysicalMaterial"){
-              materials[material.uuid] = material as MeshPhysicalMaterial;
+          if(material){
+              materials[material.uuid] = material;
           }
         }
       })
@@ -134,6 +135,12 @@ export class Scene extends THREEScene {
     //   spherical.
       this.camera.position.setFromSpherical(spherical);
       this.camera.lookAt(new Vector3());
+
+      if(this.controls){
+        this.controls.maxDistance = radius * 3;
+        this.controls.minDistance = radius;
+      }
+
 
       Object.entries(materials).forEach(([uuid, material]) => {
         const transitionMaterial = new TransitionMaterial(material);
@@ -168,21 +175,26 @@ export class Scene extends THREEScene {
     });
   }
   async initEnvironment(modelConfig = defaultConfig.sceneConfig) {
+    const environment = new Group()
     const geometry = new PlaneGeometry(15   , 15);
     
     const material = new MeshPhysicalMaterial({
-      color: new Color("Black")
+      color: new Color("White")
     });
     material.alphaMap = await new TextureLoader().loadAsync(`${process.env.PUBLIC_URL}/3dModels/env/basic/alpha-fog.png`);
     material.transparent = true;
 
     // const mesh = new Mesh(geometry, material);
     const mesh = new Reflector(geometry, material);
+
+
+
     mesh.rotateX(-Math.PI/2);
     mesh.receiveShadow = true;
-    this.add(mesh);
+    environment.add(mesh);
+    this.add(environment)
 
-    return mesh;
+    return environment;
   }
 
   initControls(domElement: HTMLElement){
