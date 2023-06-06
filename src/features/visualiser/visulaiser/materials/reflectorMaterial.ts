@@ -61,7 +61,7 @@ export class ReflectionMaterial {
                 void main() {
                     vec4 base = blurTexture(vUvReflection, tReflection);
                     // vec4 base = texture2DProj( tReflection, vUvReflection );
-                    csm_DiffuseColor = vec4( blendOverlay( base.rgb, csm_DiffuseColor.rgb ), 1.0 );
+                    csm_DiffuseColor = vec4( blendOverlay( base.rgb, csm_DiffuseColor.rgb ), csm_DiffuseColor.a );
                     // csm_DiffuseColor = vec4( base.rgb, 1.0 );
                 }
             `,
