@@ -1,6 +1,15 @@
-export interface Action{
-    name: String;
-    start (): Action;
-    end (): Action;
-    dispose(): null;
+export class Action{
+    readonly name: String = "Action";
+    constructor({name}: {name?: string, [x: string]: any}){
+        this.name = name ?? this.name;
+    }
+    start (): Action{
+        return this;
+    };
+    end (): Action{
+        return this;
+    };
+    dispose(): void {
+
+    };
 }

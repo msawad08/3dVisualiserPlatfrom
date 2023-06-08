@@ -25,12 +25,11 @@ export  type AnimationActionParams = {
     OnUpdateType?: OnUpdateType;
     onComplete?: OnCompleteType;
 }
-export class AnimationAction implements Action {
+export class AnimationAction extends Action {
 
    
     static readonly Easing = TWEEN.Easing;
 
-    readonly name: string;
     readonly duration: number;
     readonly easing: EasingType;
     readonly object: Record<string, number>;
@@ -43,7 +42,7 @@ export class AnimationAction implements Action {
 
 
     constructor(params: AnimationActionParams = defaultParams) {
-        this.name = params.name ?? defaultParams.name;
+        super({name : params.name ?? defaultParams.name})
         this.duration = params.duration ?? defaultParams.duration;
         this.easing = params.easing ?? defaultParams.easing;
         this.object = params.object ?? {...defaultParams.initialValue};
@@ -64,8 +63,8 @@ export class AnimationAction implements Action {
         this.tween.end();
         return this;
     }
-    dispose(): null {
-        throw new Error("Method not implemented.");
+    dispose(): void {
+        
     }
 
     private update = (object: Record<string, number>, elapsed: number)=>{

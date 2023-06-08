@@ -1,43 +1,38 @@
 import * as THREE from "three";
-import { Scene } from "./core/scene";
+import { AppScene } from "./core/scene";
+import { AppRenderer } from "./core/Renderers/AppRenderer";
 
 // init
 
 export class Visualiser {
   canvas?: HTMLCanvasElement;
-  scene?: Scene;
-  renderer?: THREE.WebGLRenderer;
+  scene?: AppScene;
+  renderer?: AppRenderer;
 
   init3d(canvas: HTMLCanvasElement) {
     if (!canvas || canvas === this.canvas) return;
     this.canvas = canvas;
 
-    this.scene = new Scene({ canvas });
+    this.scene = new AppScene({ canvas });
 
-    this.renderer = new THREE.WebGLRenderer({
+    this.renderer = new AppRenderer({
+      scene: this.scene,
+      canvas: this.canvas,
+      camera: this.scene.camera,
       antialias: true,
-      canvas: canvas,
+      shadowType: THREE.PCFSoftShadowMap,
     });
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setAnimationLoop(this.animation.bind(this));
-    this.renderer.shadowMap.enabled = true;
-    // this.renderer.setClearColor(new THREE.Color(0x000000ff))
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+
+    this.renderer.renderStream.subscribe(this.onRender);
 
     //TODO: Need to remove added for debugging
     (window as any).editor = this;
     (window as any).THREE = THREE;
-    // animation
-
 
   }
-  animation(time: number){
 
-    if(this.scene && this.renderer){
-      this.scene.update(time);
-  
-      this.renderer.render(this.scene, this.scene.camera);
-
-    }
+  onRender = (time: number)=>{
+    this.scene?.update(time)
   }
+
 }

@@ -25,7 +25,6 @@ import  {
   // SphereGeometry,
   MeshBasicMaterial,
   CylinderGeometry,
-  BoxGeometry,
   BackSide,
   Float32BufferAttribute,
 } from "three";
@@ -49,6 +48,12 @@ const defaultConfig = {
   modelConfig: {
     path: process.env.PUBLIC_URL + "/3dModels/toyota_supra_mk4/scene.gltf",
   },
+
+  actionTriggers:{
+
+  }
+
+  
 };
 
 type ConfigTypes = {
@@ -66,7 +71,7 @@ type ConfigTypes = {
   };
   canvas?: HTMLElement,
 };
-export class Scene extends THREEScene {
+export class AppScene extends THREEScene {
   camera: PerspectiveCamera;
   object?: Object3D;
   controls?: OrbitControls; 
@@ -210,30 +215,10 @@ export class Scene extends THREEScene {
     dome.position.y += height/2 - 0.1;
     dome.renderOrder  = 1;
 
-
-    const temp = new Vector2();
-
-    // const positionAttribute = sphere.geometry.getAttribute('position');
-    // const uvAttribute = new Float32BufferAttribute(new Float32Array(positionAttribute.count * 2), 2);
-    // sphere.geometry.setAttribute('uv', uvAttribute);
-
-    // for (let i = 0; i < positionAttribute.count; i++) {
-    //   const vertex = new Vector3();
-    //   vertex.fromBufferAttribute(positionAttribute, i);
-    //   let u = temp.set(vertex.x,vertex.z).angle()/Math.PI/2;
-    //   if(vertex.y === -height) u = temp.set(vertex.x,vertex.z).length()/width * 0.25;
-    //   else if(vertex.y === height) u = 0.75 + temp.set(vertex.x,vertex.z).length()/width * 0.25;
-    //   else u =  0.25 + (vertex.y + height)/(height*2) * 0.5;
-
-    //   let v = 0;
-    //   uvAttribute.setXY(i, u, v);
-    // }
-
     const positionAttribute = dome.geometry.getAttribute('position');
     const uvAttribute = new Float32BufferAttribute(new Float32Array(positionAttribute.count * 2), 2);
     dome.geometry.setAttribute('uv', uvAttribute);
     let floorUV = 0.3;
-    let us = [];
     for (let i = 0; i < positionAttribute.count; i++) {
       const vertex = new Vector3();
       vertex.fromBufferAttribute(positionAttribute, i);
@@ -246,10 +231,10 @@ export class Scene extends THREEScene {
       
       let v = floorUV + ((vertex.y + height / 2) / height) * (1 - floorUV*2);
       if(vertex.y === -height/2){
-        v = vertex.x === 0 && vertex.z == 0 ? 0: floorUV;
+        v = vertex.x === 0 && vertex.z === 0 ? 0: floorUV;
       }
       else if(vertex.y === height/2){
-        v = vertex.x === 0 && vertex.z == 0  ? 1.0: 1-floorUV;
+        v = vertex.x === 0 && vertex.z === 0  ? 1.0: 1-floorUV;
          
       }
       uvAttribute.setXY(i, u, v);
