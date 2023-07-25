@@ -1,17 +1,21 @@
-import { Camera, Renderer, Scene, ShadowMapType, WebGLRenderer } from "three";
+import { Camera, Scene, ShadowMapType, WebGLRenderer } from "three";
 import { Observable, fromEvent } from "rxjs"
 
 import { EventEmitter } from "events";
 import { NodeStyleEventEmitter } from "rxjs/internal/observable/fromEvent";
+import { AppScene } from "../scene";
 
 export type AppRendererParams = {
     antialias?: boolean;
     shadowType?: ShadowMapType;
-    scene: Scene;
+    scene: AppScene;
     canvas: HTMLCanvasElement;
     camera: Camera;
-    otherRenders?: RenderStep[];
     
+}
+
+type Renderer={
+    render(scene: Scene, camera: Camera): void;
 }
 
 export type RenderStep = {
@@ -26,11 +30,10 @@ export type RenderStep = {
 export class AppRenderer extends EventEmitter {
     private static ON_RENDER = "ON_RENDER";
 
-    scene: Scene;
+    scene: AppScene;
     camera: Camera;
     webGLRender: WebGLRenderer;
     renderStream: Observable<number>;
-    otherRenders: RenderStep[] = [];
 
 
 
@@ -40,7 +43,6 @@ export class AppRenderer extends EventEmitter {
         super();
         this.scene = params.scene;
         this.camera = params.camera;
-        this.otherRenders = params.otherRenders ?? this.otherRenders;
         this.renderStream = fromEvent(this as NodeStyleEventEmitter, AppRenderer.ON_RENDER) as Observable<number>;
 
         this.webGLRender = this.initWebGLRenderer(params);
@@ -59,24 +61,24 @@ export class AppRenderer extends EventEmitter {
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = params.shadowType;
         }
+        renderer.autoClear = false;
         // this.renderer.setClearColor(new THREE.Color(0x000000ff))
 
         return renderer;
     }
 
-    addRenderStep(renderStep: RenderStep) {
-        this.otherRenders.push(renderStep);
-    }
-    removeRenderStep(renderStep: RenderStep) {
-        this.otherRenders = this.otherRenders.filter((r) => r.scene === renderStep.scene && r.camera === renderStep.renderer && r.renderer === renderStep.renderer)
-    }
+
 
     animation = (time: number) => {
 
         if (this.scene && this.webGLRender) {
-
+            this.webGLRender.clear();
             //   this.scene.update(time);
             this.webGLRender.render(this.scene, this.camera);
+            this.scene.otherRenders.forEach(({renderer, scene, camera})=>{
+                (renderer ?? this.webGLRender).render(scene ?? this.scene, camera ?? this.camera);
+            })
+
             this.emit(AppRenderer.ON_RENDER, time);
 
         }

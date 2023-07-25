@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { Visualiser } from "./visulaiser";
+import { Visualiser } from "../../visualiserLib/visulaiser";
 
 export interface VisualiserState {
     visualiser: Visualiser

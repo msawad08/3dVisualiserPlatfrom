@@ -12,4 +12,8 @@ export class Action{
     dispose(): void {
 
     };
+
+    promise(): Promise<any>{
+        return Promise.resolve();
+    };
 }

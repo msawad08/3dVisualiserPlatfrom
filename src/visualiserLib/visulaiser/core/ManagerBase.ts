@@ -11,7 +11,7 @@ export class ManagerBase<T extends ManagerInstance> {
         if (this.list.has(name)) {
             return this.list.get(name);
         }
-        throw "Type Not Registered Exception";
+        throw `Type Not Registered Exception: ${name}`;
     }
 
     protected instances: Map<string, T> = new Map();
@@ -20,4 +20,5 @@ export class ManagerBase<T extends ManagerInstance> {
         this.instances.forEach((i) => i.dispose());
     }
     addInstance = ([name, instance]: [string, T]) => this.instances.set(name, instance);
+    getInstance = (id: string): T | undefined => this.instances.get(id);
 }

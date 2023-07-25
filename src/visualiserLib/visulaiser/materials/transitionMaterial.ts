@@ -37,7 +37,8 @@ export class TransitionMaterial {
                 uniform bool change;
                 void main() {
                     // min(max((vPosition.y+4.0)*0.05, 0.0),1.0)
-                    if(change) csm_DiffuseColor = mix(csm_DiffuseColor, vec4(newColor.xyz,1.0),(a_time/1000.0) > distance(startPoint, vPosition) ? 1.0:0.0);
+                    // if(change) csm_DiffuseColor = mix(csm_DiffuseColor, vec4(newColor.xyz,1.0),(a_time/1000.0) > distance(startPoint, vPosition) ? 1.0:0.0);
+                    if(change) csm_DiffuseColor = mix(csm_DiffuseColor, vec4(newColor.xyz,1.0),min((a_time/2000.0),1.0));
                 }
             `,
             ...(this.copyMaterial(material)),

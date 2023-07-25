@@ -1,15 +1,14 @@
 import React from 'react';
 import { Visualiser } from '../visualiser/Visualiser';
 import './App.css';
+import { Configurator } from '../configurator/configurator';
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
         <Visualiser />
-
+        <Configurator/>
     
-      </header>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { Object3D, Scene, Vector3 } from "three";
 import { AnimationAction, AnimationActionParams } from "./AnimationAction";
+import { ActionManager } from "./ActionManager";
 
 export type AnimateObjectActionParams = {
     scene: Scene,
@@ -20,3 +21,4 @@ export class AnimateObjectAction extends AnimationAction{
 
     }
 }
+
