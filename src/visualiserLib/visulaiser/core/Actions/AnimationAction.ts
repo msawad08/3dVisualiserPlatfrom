@@ -103,7 +103,6 @@ export class AnimationAction extends Action {
 
     protected update(object: Record<string, number>, elapsed: number){
         this.onUpdate && this.onUpdate(object, elapsed);
-        console.log(object);
     }
 
     protected complete(object: Record<string, number>){

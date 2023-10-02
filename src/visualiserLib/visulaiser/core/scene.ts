@@ -29,6 +29,7 @@ import {
   Float32BufferAttribute,
   ColorRepresentation,
   Quaternion,
+  Wrapping,
 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -39,6 +40,7 @@ import { ActionConfig, ActionManager } from "./Actions/ActionManager";
 import { ActionTriggerConfig, TriggerManager } from "./EventTriggers/TriggerManager";
 import { RenderStep } from "./Renderers/AppRenderer";
 import * as TWEEN from "@tweenjs/tween.js";
+import { setZIndex } from "../utils/util3d";
 
 
 const defaultConfig = {
@@ -49,11 +51,14 @@ const defaultConfig = {
     far: 1000,
   },
   sceneConfig: {
-    backgroundColor: "Black",
+    backgroundColor: "White",
   },
   modelConfig: {
     path: process.env.PUBLIC_URL + "/3dModels/toyota_supra_mk4/scene.gltf",
     transitionAllowedMaterials: ["Paint"],
+    materials: {
+      
+    }
   },
   
 
@@ -110,7 +115,7 @@ const defaultConfig = {
 
 };
 
-type ConfigTypes = {
+export type SceneConfigType = {
   cameraConfig?: {
     fov?: number;
     aspect?: number;
@@ -150,7 +155,7 @@ export class AppScene extends THREEScene {
     cameraConfig, modelConfig, canvas,
     actionConfig = defaultConfig.actionConfig,
     actionTriggerConfig = defaultConfig.actionTriggerConfig
-  }: ConfigTypes) {
+  }: SceneConfigType) {
     super();
     this.textureLoader = new TextureLoader();
 
@@ -244,7 +249,8 @@ export class AppScene extends THREEScene {
 
     gltf.scene.traverse((child: Object3D) => {
       if (child instanceof Mesh && child.material && this.transitionMaterials[child.material.uuid]) {
-        child.material = this.transitionMaterials[child.material.uuid].material;
+        // child.material = this.transitionMaterials[child.material.uuid].material;
+        this.transitionMaterials[child.material.uuid].attachMesh(child)
       }
     });
     return gltf.scene;
@@ -254,56 +260,72 @@ export class AppScene extends THREEScene {
 
     // create Floor
     const geometry = new PlaneGeometry(15, 15);
-    const material = new MeshPhysicalMaterial({
-      color: new Color("White"),
-      opacity: 0.1,
+    // geometry.rotateX(-Math.PI / 2);
+    const materialReflector = new MeshPhysicalMaterial({
+      color: new Color("white"),
+      opacity: 0.5,
+      transparent: true,
     });
-    material.alphaMap = await this.textureLoader.loadAsync(`${process.env.PUBLIC_URL}/3dModels/env/basic/alpha-fog.png`);
-    material.transparent = true;
+    const materialFloor = new MeshBasicMaterial({
+      // color: new Color("black"),
+      transparent: true,
+    });
+    materialFloor.alphaMap = materialReflector.alphaMap = await this.textureLoader.loadAsync(`${process.env.PUBLIC_URL}/3dModels/env/basic/alpha-fog.png`);
+    materialFloor.map = await this.textureLoader.loadAsync(`${process.env.PUBLIC_URL}/3dModels/env/basic/Seamless grey marble texture.jpg`);
+    materialFloor.map.wrapS = materialFloor.map.wrapT = RepeatWrapping;
+    materialFloor.map.repeat.set(50,50);
+    // materialReflector.transparent = true;
     // const mesh = new Mesh(geometry, material);
-    const mesh = new Reflector(geometry, material);
-    mesh.renderOrder = 5;
-    mesh.rotateX(-Math.PI / 2);
-    mesh.receiveShadow = true;
-    environment.add(mesh);
+    const meshReflector = new Reflector(geometry, materialReflector);
+    const meshFloor = new Mesh(geometry, materialFloor);
 
-    const exr = await (new EXRLoader().loadAsync(`${process.env.PUBLIC_URL}/3dModels/env/outdoor/wide_street_02_4k.exr`));
-    this.environment = exr;
-    const height = 6, width = 15;
-    const domeGeometry = new CylinderGeometry(width / 2, width / 2, height)
-    const dome = new Mesh(
-      domeGeometry,
-      new MeshBasicMaterial({ map: exr, side: BackSide }),
-    )
-    dome.position.y += height / 2 - 0.1;
-    dome.renderOrder = 1;
+    meshReflector.renderOrder = 5;
+    meshReflector.rotateX(-Math.PI / 2);
+    meshFloor.rotateX(-Math.PI / 2);
+    meshFloor.scale.set(5,5,1);
+    setZIndex({object: meshFloor, zIndex: 25});
+    setZIndex({object: meshReflector, zIndex: 0});
+    meshFloor.receiveShadow = true;
+    environment.add(meshReflector);
+    environment.add(meshFloor);
+    
+    // const exr = await (new EXRLoader().loadAsync(`${process.env.PUBLIC_URL}/3dModels/env/outdoor/spree_bank_4k.exr`));
+    // this.environment = exr;
+    // const height = 8, width = 15;
+    // const domeGeometry = new CylinderGeometry(width / 2, width / 2, height)
+    // const dome = new Mesh(
+    //   domeGeometry,
+    //   new MeshBasicMaterial({ map: exr, side: BackSide }),
+    // )
+    // dome.position.y += height / 2 - 0.1;
+    // dome.renderOrder = 1;
 
-    const positionAttribute = dome.geometry.getAttribute('position');
-    const uvAttribute = new Float32BufferAttribute(new Float32Array(positionAttribute.count * 2), 2);
-    dome.geometry.setAttribute('uv', uvAttribute);
-    let floorUV = 0.3;
-    for (let i = 0; i < positionAttribute.count; i++) {
-      const vertex = new Vector3();
-      vertex.fromBufferAttribute(positionAttribute, i);
+    // const positionAttribute = dome.geometry.getAttribute('position');
+    // const uvAttribute = new Float32BufferAttribute(new Float32Array(positionAttribute.count * 2), 2);
+    // dome.geometry.setAttribute('uv', uvAttribute);
+    // let floorUV = 0.0;
+    // for (let i = 0; i < positionAttribute.count; i++) {
+    //   const vertex = new Vector3();
+    //   vertex.fromBufferAttribute(positionAttribute, i);
 
-      const theta = Math.atan2(vertex.x, -vertex.z);
-      // const u = temp.set(vertex.x,vertex.z).angle()/Math.PI/2;
+    //   const theta = Math.atan2(vertex.x, -vertex.z);
+    //   // const u = temp.set(vertex.x,vertex.z).angle()/Math.PI/2;
 
-      const u = (theta + Math.PI) / (2 * Math.PI);
-      // us.push(u);/
+    //   const u = (theta + Math.PI) / (2 * Math.PI);
+    //   // us.push(u);/
 
-      let v = floorUV + ((vertex.y + height / 2) / height) * (1 - floorUV * 2);
-      if (vertex.y === -height / 2) {
-        v = vertex.x === 0 && vertex.z === 0 ? 0 : floorUV;
-      }
-      else if (vertex.y === height / 2) {
-        v = vertex.x === 0 && vertex.z === 0 ? 1.0 : 1 - floorUV;
+    //   let v = floorUV + ((vertex.y + height / 2) / height) * (1 - floorUV * 2);
+    //   if (vertex.y === -height / 2) {
+    //     v = vertex.x === 0 && vertex.z === 0 ? 0 : floorUV;
+    //   }
+    //   else if (vertex.y === height / 2) {
+    //     v = vertex.x === 0 && vertex.z === 0 ? 1.0 : 1 - floorUV;
 
-      }
-      uvAttribute.setXY(i, u, v);
-    }
-    // console.log("U Max and Min", Math.max(...us), Math.min(...us), us.length, us);
-    environment.add(dome);
+    //   }
+    //   uvAttribute.setXY(i, u, v);
+    // }
+    // // console.log("U Max and Min", Math.max(...us), Math.min(...us), us.length, us);
+    // environment.add(dome);
 
     //Create Wall
 

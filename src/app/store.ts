@@ -1,10 +1,8 @@
 import { configureStore, ThunkAction, Action } from '@reduxjs/toolkit';
-import counterReducer from '../features/counter/counterSlice';
-import { visualiserReducer } from '../features/visualiser/visualiserSlice';
+import { visualiserReducer } from '../features/visualiser/visualiser.slice';
 
 export const store = configureStore({
   reducer: {
-    counter: counterReducer,
     visualiser: visualiserReducer,
   },
 });

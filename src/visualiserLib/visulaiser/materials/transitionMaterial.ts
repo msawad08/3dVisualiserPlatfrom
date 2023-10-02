@@ -25,8 +25,11 @@ export class TransitionMaterial {
             baseMaterial: material,
             vertexShader: `
             varying vec3 vPosition;
+            uniform mat4 worldMatrix;
+
             void main() {
-                vPosition = csm_Position;
+                vPosition =  (  vec4(position, 1.) * worldMatrix).xyz; //csm_Position;
+
             }
             `,
             fragmentShader: `
@@ -37,8 +40,8 @@ export class TransitionMaterial {
                 uniform bool change;
                 void main() {
                     // min(max((vPosition.y+4.0)*0.05, 0.0),1.0)
-                    // if(change) csm_DiffuseColor = mix(csm_DiffuseColor, vec4(newColor.xyz,1.0),(a_time/1000.0) > distance(startPoint, vPosition) ? 1.0:0.0);
-                    if(change) csm_DiffuseColor = mix(csm_DiffuseColor, vec4(newColor.xyz,1.0),min((a_time/2000.0),1.0));
+                    if(change) csm_DiffuseColor = mix(csm_DiffuseColor, vec4(newColor.xyz,1.0),(a_time/1000.0) > distance(startPoint, vPosition) ? 1.0:0.0);
+                    // if(change) csm_DiffuseColor = mix(csm_DiffuseColor, vec4(newColor.xyz,1.0),min((a_time/2000.0),1.0));
                 }
             `,
             ...(this.copyMaterial(material)),
@@ -48,6 +51,9 @@ export class TransitionMaterial {
                 },
                 a_time:{
                     value: this.currentTime,
+                },
+                worldMatrix:{
+                    value: new THREE.Matrix4(),
                 },
                 startPoint:{
                     value: new THREE.Vector3(),
@@ -62,6 +68,8 @@ export class TransitionMaterial {
             this.update(event.data.time)
         });
     }
+
+
 
     copyMaterial(source: any) {
         const params=  Object.entries({
@@ -149,15 +157,28 @@ export class TransitionMaterial {
         return Object.fromEntries(params);
     }
 
+    attachMesh(mesh: THREE.Mesh) {
+        mesh.material = this.material as THREE.Material;
+        mesh.onBeforeRender = function(){
+            const {material, matrixWorld} = this;
+            if(material instanceof CustomShaderMaterial){
+                material.uniforms.worldMatrix.value.copy(matrixWorld);
+            }
+            
+        }
+    }
+
     update(time: number){
         this.currentTime = time;
         if(this?.material?.uniforms?.a_time)
             this.material.uniforms.a_time.value = this.currentTime - this.startTime;
+        
     }
 
     onClick(point: THREE.Vector3, mesh: THREE.Mesh){
         if(this?.material?.uniforms?.a_time){
-            this.material.uniforms.startPoint.value = mesh?.worldToLocal(point)
+            // this.material.uniforms.startPoint.value = mesh?.worldToLocal(point).applyMatrix4(mesh.modelViewMatrix)
+            this.material.uniforms.startPoint.value.copy(point);
             this.material.uniforms.change.value = true;
             this.restart()
         }

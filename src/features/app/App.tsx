@@ -1,6 +1,6 @@
 import React from 'react';
 import { Visualiser } from '../visualiser/Visualiser';
-import './App.css';
+// import './App.css';
 import { Configurator } from '../configurator/configurator';
 
 function App() {
